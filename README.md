@@ -1,14 +1,15 @@
 # Amigo forge skills for Claude Code
 
-Claude Code skills that let Claude drive the Amigo `forge` CLI for you - syncing agent
-entities, running platform commands, and simulation testing - automatically, based on what
-you ask.
+Claude Code skills that let Claude drive the Amigo `forge` CLI for you - designing, building,
+validating, deploying, and simulation-testing Amigo agents on the Platform - automatically,
+based on what you ask.
 
 ## Prerequisites
 
 1. **Claude Code** installed.
-2. **The `forge` binary** on your `PATH` (see the agent-forge-go install docs). These skills
-   drive the binary you already have; they don't install it.
+2. **The `forge` binary** (**0.1.23 or newer**) on your `PATH` — see the agent-forge-go install
+   docs, or `curl -fsSL https://forge.platform.amigo.ai/install.sh | sh`. These skills drive the
+   binary you already have; they don't install it. (Model configuration needs 0.1.23+.)
 
 ## Install
 
@@ -39,9 +40,9 @@ Building an Amigo agent with the `forge` CLI, front to back:
 | Skill | Use it to… |
 |---|---|
 | `forge-agent-design` | Scope an agent *before* building — decide where each piece of complexity belongs (a deterministic `function` vs a `context_graph` state vs an isolated `skill` vs a router vs multi-agent). Read this first. |
-| `forge-build-agent` | Stand up the entities end-to-end: `persona` → `function`s → `context_graph` → `agent` → `skill`s → `service` → a pinned `version-set`. |
+| `forge-build-agent` | Stand up the entities end-to-end: `function`s → `context_graph` → `agent` → `skill`s → `service` → a pinned `version-set`. |
 | `forge-validate` | Run the local, no-auth pre-push gate over your entity JSON (`forge validate`). |
-| `forge-sync` | Pull, edit, validate, and push entity data between local and the Platform (`sync-to-local`/`sync-to-remote`, `platform push`). |
+| `forge-sync` | Read, edit, validate, and deploy entity data via `forge platform` (`forge platform <entity> get`, then `forge platform push` — dry-run, then `--apply`). |
 | `forge-simulate` | Regression-test and prove parity before promoting a `version-set`, keeping a rollback path. |
 
 Each skill fires automatically when your request matches, or invoke one explicitly, e.g.
