@@ -74,6 +74,57 @@ the **fewest constraints that reliably produce the behavior**.
 - **One idea at a time in output** — favor a single concept per response and avoid stacked
   questions.
 
+### Structure the identity as background elements
+
+Author the agent's identity as a background with these elements (the first four are required):
+
+- **Motivations** *(required)* — the driving forces behind how the agent acts.
+- **Biography** *(required)* — a coherent backstory that grounds its expertise and voice.
+- **Expertise** *(required)* — the specific knowledge and skills it brings.
+- **Philosophy** *(required)* — the beliefs and principles that shape its approach.
+- **Achievements**, **Relationships**, **Evolution**, **Current Status**, **Vision** *(optional)* — added depth that makes edge-case behavior feel consistent.
+
+Write them in the agent's own voice; a rich, coherent identity handles off-happy-path moments
+axiomatically. Sanitized sketch:
+
+```md
+# Motivations
+- I want every caller to leave more capable than they arrived — a problem fully resolved on
+  first contact, not a ticket passed along.
+# Biography
+- Years on the Acme Corp support floor; grew from frontline agent to a senior specialist who
+  trains new hires on de-escalation.
+# Expertise
+- Deep knowledge of Acme Corp's order, billing, and subscription systems and their edge cases.
+# Philosophy
+- A caller who feels heard forgives almost anything; confirm you understand the problem before
+  proposing a fix.
+```
+
+### Behavior vs. communication guidelines
+
+Split identity-level guidelines by *where they apply*:
+
+- **Behavior** = the *what*, relevant to both the agent's reasoning **and** its replies
+  (e.g. "resolve the caller's stated problem before introducing anything new").
+- **Communication** = the *how*, relevant only to the reply
+  (e.g. "acknowledge briefly, then answer in one or two sentences").
+
+A behavior shapes decisions even when the agent is silent; a communication rule only shapes wording.
+
+### Few-shot examples in guidelines: templates, not transcripts
+
+When a guideline needs examples, prefer **generalizable templates with `[placeholders]`** over
+fixed verbatim lines — a hardcoded example gets parroted; a template transfers. To push
+open-ended questions, for instance:
+
+> Favor open questions using shapes like *"What is your `[goal]` right now?"*,
+> *"What `[aspect]` stands out to you?"*, *"What's behind `[concern]` for you?"* — not one fixed
+> script, and avoid yes/no ("Are/Is …") phrasings.
+
+The same rule governs a `skill`'s prompt (see `skill-prompting.md`): show the *shape* of a good
+turn and cover an edge case, rather than one exact wording the model will over-copy.
+
 ---
 
 ## Part 2 — Authoring the context graph
@@ -126,14 +177,88 @@ to be rude, and every unnecessary instruction wastes context and can confuse edg
 
 | State type | Talks to user? | Use when |
 |---|---|---|
-| **Action** | Yes (only client-visible type) | The agent must say something — speak, ask, guide, close. Carries `objective`, ordered `actions` (WHAT), `action_guidelines` (HOW), `boundary_constraints` (hard nevers), `exit_conditions`. Every user-visible turn begins and ends here. |
-| **Decision** | No (internal routing) | 2+ qualitatively different next paths and the choice can be written as criteria. Picks an exit and transitions immediately; can serve as a central router. |
+| **Action** | Yes (only client-visible type) | The agent must say something — speak, ask, guide, close. Carries `objective`, ordered `actions` (WHAT), `intra_state_navigation_guidelines` (how to move between actions), `action_guidelines` (HOW), `boundary_constraints` (hard nevers), `exit_conditions`. Every user-visible turn begins and ends here. |
+| **Decision** | No (internal routing) | 2+ qualitatively different next paths and the choice can be written as criteria. Carries `decision_guidelines` + `exit_conditions` (no `actions`); picks an exit and transitions immediately; can serve as a central router. |
 | **Data-collection** | Yes | The mode is specifically *gathering structured inputs* one at a time (name, then email, then phone) with confirmation before advancing. Keep the "one field at a time / confirm first" discipline here. |
 | **Annotation** | No (invisible marker) | Record that an otherwise-implicit boundary was crossed (a phase started/completed). Purely organizational; transitions immediately. |
 
 Prefer an action state's own guidelines over a decision state when routing is intuitive and
 conversational; reach for a decision state only when the branch is non-obvious and benefits
 from explicit criteria.
+
+### Few-shot: an action state
+
+The fields split cleanly — `actions` say *what* (high-level), `action_guidelines` say *how*,
+`boundary_constraints` are hard nevers, `exit_conditions` are the ways out. A sanitized
+appointment-reschedule state:
+
+```json
+{
+  "confirm_reschedule": {
+    "type": "action",
+    "objective": "Confirm the caller's new appointment time and complete the reschedule",
+    "actions": [
+      "Offer the open slots that match the caller's stated preference",
+      "Confirm the specific slot the caller chooses",
+      "Complete the reschedule and read the new time back"
+    ],
+    "intra_state_navigation_guidelines": [
+      "Start by offering slots; do not complete the reschedule until the caller confirms one.",
+      "If the preference is too vague to match a slot, ask one focused question instead of guessing.",
+      "Once the reschedule succeeds, read the new time back and move on."
+    ],
+    "action_guidelines": [
+      "Offer at most three concrete slots at a time so the caller isn't overwhelmed.",
+      "Filter the slots you present by the caller's stated day / time-of-day preference."
+    ],
+    "boundary_constraints": [
+      "Never describe the appointment as moved until the reschedule tool returns success.",
+      "Never book a new appointment or cancel one here — only move the existing one."
+    ],
+    "exit_conditions": [
+      { "description": "The reschedule completed and the new time was confirmed", "next_state": "close_out" },
+      { "description": "The caller no longer wants to reschedule", "next_state": "close_out" }
+    ]
+  }
+}
+```
+
+**Actions are WHAT, not HOW.** Keep `actions` high-level and push detail/phrasing into
+`action_guidelines`. Over-specifying an action bakes in exact options or wording, which makes
+the agent repeat itself and breaks natural flow:
+
+| ✗ Avoid (rigid) | ✓ Prefer (high-level) |
+|---|---|
+| `"Offer the 3 PM, 4 PM, or 5 PM slot by saying 'Which do you want — 3, 4, or 5?'"` | `"Offer open slots that match the caller's preference"` — with an `action_guideline`: `"Present matching slots gradually, using the caller's stated preference."` |
+
+### Few-shot: a decision state (router)
+
+A decision state is **invisible to the caller** — no `actions` or `action_guidelines`, just
+`decision_guidelines` plus `exit_conditions`, and it transitions immediately. Use one as a
+central router when several distinct modes could come next:
+
+```json
+{
+  "route_support_request": {
+    "type": "decision",
+    "objective": "Determine what the caller needs and route to the right state",
+    "decision_guidelines": [
+      "Review the conversation so far to decide which request the caller is making.",
+      "Prefer the most specific match; an unresolved billing question routes to billing first.",
+      "If intent is still unclear, route back to intake to ask one clarifying question."
+    ],
+    "exit_conditions": [
+      { "description": "The caller is asking about an existing order or delivery", "next_state": "handle_order_status" },
+      { "description": "The caller has a billing or payment question", "next_state": "handle_billing" },
+      { "description": "The caller wants to change or cancel a subscription", "next_state": "handle_subscription" },
+      { "description": "The caller's intent is unclear", "next_state": "intake" }
+    ]
+  }
+}
+```
+
+Keep each exit condition **distinct and non-overlapping**, and make the last one an explicit
+catch-all so the router always has a safe default.
 
 ### Clear state naming
 
