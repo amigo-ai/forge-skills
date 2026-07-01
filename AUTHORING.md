@@ -13,9 +13,10 @@ forge-skills/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       └── skills/
-│           ├── _TEMPLATE/SKILL.md
 │           └── hello-forge/
 │               └── SKILL.md
+├── templates/
+│   └── SKILL.md.example
 ├── README.md
 ├── AUTHORING.md
 └── LICENSE
