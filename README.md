@@ -23,11 +23,11 @@ claude plugin install forge@amigo-forge
 ## Use
 
 In any forge project, just describe what you want - Claude picks the matching skill
-automatically (e.g. "sync my entities to staging", "run a smoke test against my workspace").
+automatically (e.g. "test the forge placeholder skill").
 You can also invoke a skill explicitly:
 
 ```text
-/forge:forge-test
+/forge:hello-forge
 ```
 
 List installed skills with `/plugin`.

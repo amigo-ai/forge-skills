@@ -14,9 +14,8 @@ forge-skills/
 │       │   └── plugin.json
 │       └── skills/
 │           ├── _TEMPLATE/SKILL.md
-│           └── forge-test/
-│               ├── SKILL.md
-│               └── scripts/forge-test.sh
+│           └── hello-forge/
+│               └── SKILL.md
 ├── README.md
 ├── AUTHORING.md
 └── LICENSE
@@ -42,7 +41,7 @@ Do not rely on repo-internal phrases, private branch names, or implementation de
 Installed plugins are copied to `~/.claude/plugins/cache`, so bundled scripts must be referenced through `${CLAUDE_PLUGIN_ROOT}`:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/forge-test/scripts/forge-test.sh staging test-org
+${CLAUDE_PLUGIN_ROOT}/skills/<name>/scripts/<helper>.sh staging test-org
 ```
 
 Do not use repo-relative paths such as `.codex/skills/...` or `plugins/forge/skills/...` inside skill workflows.
