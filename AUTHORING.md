@@ -1,6 +1,6 @@
 # Authoring forge skills
 
-This repository publishes the public `amigo-forge` Claude Code plugin marketplace. Add new customer-facing skills conservatively and keep them tied to commands that exist in the Go `forge` binary.
+This repository publishes the public `amigo-forge` Claude Code plugin marketplace. Add new customer-facing skills conservatively and keep them tied to commands that exist in the **released** Go `forge` binary — verify against the release artifact (currently ≥ 0.1.23), not a local source build, which can be ahead of what customers run.
 
 ## Layout
 
@@ -23,6 +23,13 @@ forge-skills/
 ```
 
 New skills go in `plugins/forge/skills/<name>/SKILL.md`. Put helper scripts under `plugins/forge/skills/<name>/scripts/` and make executable scripts executable.
+
+## Command surface (hard rules)
+
+- **Document only `forge platform ...` commands.** `forge validate` (local, no API) and `forge auth ... --platform` are also allowed. Do **not** document the classic backend commands `sync-to-local` / `sync-to-remote` (aliases `stl` / `str`) or the legacy `.env.<env>` surface — the Platform surface uses `.env.platform.<env>`.
+- **Verify against the released binary.** Run every command against the release artifact (`curl -fsSL https://forge.platform.amigo.ai/install.sh | sh`, currently ≥ 0.1.23) before documenting it. Model configuration (`forge platform version-set upsert --body`) requires ≥ 0.1.23.
+- **No `persona`.** The standalone persona entity is retired; author identity in the agent's own instructions and never reference a `persona` entity (or the word).
+- **Version-sets:** `release` is the live set; pin a writable named set (e.g. `candidate`) to test; `edge` is a reserved name that may not exist — don't target it.
 
 ## Trigger descriptions
 
@@ -104,6 +111,6 @@ ${CLAUDE_PLUGIN_ROOT}/skills/<name>/scripts/...>
 real customer data into notes/commits/PRs>
 ```
 
-## Candidate skills
+## Shipped skills
 
-Future candidates from the Python agent-forge repo include sync workflow, platform commands, and simulation/testing skills. Only port a candidate after verifying the documented command exists in `agent-forge-go` by checking its README and `forge --help` output.
+The marketplace currently ships `forge-agent-design` (scoping/placement), `forge-build-agent` (build entities end-to-end), `forge-validate` (local gate), `forge-sync` (read/deploy via `forge platform`), and `forge-simulate` (regression + parity gate), plus the `hello-forge` placeholder. Before adding another: keep it `forge platform`-only (see Command surface), verify every documented command against the released binary, and add a row to the Skills table in `README.md`.
