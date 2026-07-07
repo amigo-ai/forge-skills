@@ -98,12 +98,6 @@ Every contributor must pass this before committing:
 claude plugin validate .
 ```
 
-Also validate the Codex plugin manifest when the local validator is available:
-
-```bash
-python3 /Users/caly/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py plugins/forge
-```
-
 Fix JSON syntax, duplicate skill names, missing frontmatter, and invalid path references before opening a PR.
 
 ## Skill template
